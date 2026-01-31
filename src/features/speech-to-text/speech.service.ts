@@ -3,12 +3,24 @@ import * as fs from "fs";
 import { publishCommand, isConnected, connectMQTT } from "../mqtt/mqtt.service";
 import { matchCommand, matchCommandByKeywords } from "../mqtt/mqtt.helper";
 
+// Helper function to create SpeechClient with proper credentials
+function createSpeechClient(): SpeechClient {
+  // For Vercel deployment: use GOOGLE_CREDENTIALS environment variable (JSON string)
+  if (process.env.GOOGLE_CREDENTIALS) {
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    return new SpeechClient({ credentials });
+  }
+
+  // For local development: use GOOGLE_APPLICATION_CREDENTIALS (file path)
+  return new SpeechClient();
+}
+
 export async function transcribeAudioService(
   fileName: string,
   buffer: Buffer,
   encoding?: "LINEAR16" | "WEBM_OPUS",
 ): Promise<string> {
-  const client = new SpeechClient();
+  const client = createSpeechClient();
 
   // In Next.js App Router we might receive a Buffer directly instead of a file path if we process it in memory.
   // But Google Cloud SDK accepts audio content as string base64 or bytes.
