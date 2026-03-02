@@ -216,7 +216,7 @@ function App() {
   };
 
   return (
-    <div className="w-full max-w-[1600px] min-h-screen flex flex-col justify-center items-center p-5 font-sans bg-bg text-text mx-auto">
+    <div className="w-full min-h-screen flex flex-col justify-center items-center p-5 font-sans bg-bg text-text mx-auto">
       <h1 className="text-center mb-8 font-semibold text-4xl tracking-tight">
         Smart AIoT
       </h1>

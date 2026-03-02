@@ -1,4 +1,4 @@
-import { statusManager } from "@src/features/mqtt/mqtt.helper";
+import { addClient, removeClient } from "@src/features/mqtt/mqtt.helper";
 import { initializeMQTT } from "@src/features/mqtt/mqtt.service";
 
 export const dynamic = "force-dynamic";
@@ -7,17 +7,15 @@ export async function GET(request: Request) {
   // Ensure MQTT is running
   initializeMQTT().catch(console.error);
 
-  const encoder = new TextEncoder();
-
   const customReadable = new ReadableStream({
     start(controller) {
-      statusManager.addClient(controller);
+      addClient(controller);
 
       // Keep-alive or initial data
       // controller.enqueue(encoder.encode('data: {"status":"connected"}\n\n'));
     },
     cancel(controller) {
-      statusManager.removeClient(controller);
+      removeClient(controller);
     },
   });
 

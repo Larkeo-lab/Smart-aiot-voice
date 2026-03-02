@@ -32,6 +32,11 @@ const COMMAND_MAPPINGS: CommandMapping[] = [
       "ເປີດໄຟສີເຂຽວ",
       "ເປີດໄຟຄຽວ",
       "ເປີດໄຟຂີວ",
+      // ເປິດໃຊ້ variations
+      "ເປິດໃຊ້ສີຂຽວ",
+      "ເປິດໃຊ້ຂຽວ",
+      "ເປີດໃຊ້ສີຂຽວ",
+      "ເປີດໃຊ້ຂຽວ",
     ],
     mqttCommand: "led_green_on",
   },
@@ -45,6 +50,9 @@ const COMMAND_MAPPINGS: CommandMapping[] = [
       "ປິດໄຟສີເຂຽວ",
       "ປິດໄຟຄຽວ",
       "ປິດໄຟຂີວ",
+      // ປິດໃຊ້ variations
+      "ປິດໃຊ້ສີຂຽວ",
+      "ປິດໃຊ້ຂຽວ",
     ],
     mqttCommand: "led_green_off",
   },
@@ -59,6 +67,11 @@ const COMMAND_MAPPINGS: CommandMapping[] = [
       "ປີດໄຟສີຟ້າ",
       "ເປີດໄຟຟາ",
       "ເປີດໄຟສີຟາ",
+      // ເປິດໃຊ້ variations
+      "ເປິດໃຊ້ສີຟ້າ",
+      "ເປິດໃຊ້ຟ້າ",
+      "ເປີດໃຊ້ສີຟ້າ",
+      "ເປີດໃຊ້ຟ້າ",
     ],
     mqttCommand: "led_blue_on",
   },
@@ -71,6 +84,9 @@ const COMMAND_MAPPINGS: CommandMapping[] = [
       "ບິດໄຟສີຟ້າ",
       "ປິດໄຟຟາ",
       "ປິດໄຟສີຟາ",
+      // ປິດໃຊ້ variations
+      "ປິດໃຊ້ສີຟ້າ",
+      "ປິດໃຊ້ຟ້າ",
     ],
     mqttCommand: "led_blue_off",
   },
@@ -90,6 +106,12 @@ const COMMAND_MAPPINGS: CommandMapping[] = [
       "ເປີດໄຟລືອງ",
       "ເປີດໄຟຊີລືອງ",
       "ເປີດໄຟສີລືອງ",
+      // ເປິດໃຊ້ variations
+      "ເປິດໃຊ້ສີເຫລືອງ",
+      "ເປິດໃຊ້ເຫລືອງ",
+      "ເປີດໃຊ້ສີເຫລືອງ",
+      "ເປີດໃຊ້ເຫລືອງ",
+      "ເປິດໃຊ້ສີເຫຼືອງ",
     ],
     mqttCommand: "led_yello_on",
   },
@@ -106,17 +128,37 @@ const COMMAND_MAPPINGS: CommandMapping[] = [
       "ປິດໄຟລືອງ",
       "ປິດໄຟຊີລືອງ",
       "ປິດໄຟສີລືອງ",
+      // ປິດໃຊ້ variations
+      "ປິດໃຊ້ສີເຫລືອງ",
+      "ປິດໃຊ້ເຫລືອງ",
+      "ປິດໃຊ້ສີເຫຼືອງ",
     ],
     mqttCommand: "led_yello_off",
   },
 
   // Buzzer
   {
-    patterns: ["ເປີດສຽງ", "ເປີດ สຽງ", "ເປີດສຽງດັງ", "ປີດສຽງ", "ເປີດສຽງດັງ"],
+    patterns: [
+      "ເປີດສຽງ",
+      "ເປີດ สຽງ",
+      "ເປີດສຽງດັງ",
+      "ປີດສຽງ",
+      "ເປີດສຽງດັງ",
+      // ເປິດໃຊ້ variations
+      "ເປິດໃຊ້ສຽງ",
+      "ເປີດໃຊ້ສຽງ",
+    ],
     mqttCommand: "buzzer_on",
   },
   {
-    patterns: ["ປິດສຽງ", "ປິດ สຽງ", "ປິດສຽງດັງ", "ບິດສຽງ"],
+    patterns: [
+      "ປິດສຽງ",
+      "ປິດ สຽງ",
+      "ປິດສຽງດັງ",
+      "ບິດສຽງ",
+      // ປິດໃຊ້ variations
+      "ປິດໃຊ້ສຽງ",
+    ],
     mqttCommand: "buzzer_off",
   },
 ];
@@ -170,6 +212,7 @@ export function matchCommandByKeywords(transcript: string): string | null {
   if (!transcript) return null;
 
   const text = transcript.toLowerCase();
+  console.log("🎯 Matching command by keywords:", transcript);
   const isOpen =
     text.includes("ເປີດ") || text.includes("เปิด") || text.includes("ປີດ");
   const isClose =
@@ -223,68 +266,67 @@ export function matchCommandByKeywords(transcript: string): string | null {
 // Status Manager (Adapted for Next.js SSE)
 // ========================================
 
-class StatusManager {
-  private clients: Set<ReadableStreamDefaultController> = new Set();
-  private currentStatus: DeviceStatus = {
-    buzzer: false,
-    led_green: false,
-    led_blue: false,
-    led_yello: false,
-  };
+const clients = new Set<ReadableStreamDefaultController>();
+let currentStatus: DeviceStatus = {
+  buzzer: false,
+  led_green: false,
+  led_blue: false,
+  led_yello: false,
+};
 
-  addClient(controller: ReadableStreamDefaultController): void {
-    this.clients.add(controller);
-    console.log(`✅ SSE Client connected. Total: ${this.clients.size}`);
-    this.sendToClient(controller, this.currentStatus);
-  }
+function broadcast(status: DeviceStatus): void {
+  clients.forEach((client) => sendToClient(client, status));
+}
 
-  removeClient(controller: ReadableStreamDefaultController): void {
-    this.clients.delete(controller);
-    console.log(`❌ SSE Client disconnected. Total: ${this.clients.size}`);
-  }
-
-  updateStatus(status: Partial<DeviceStatus>): void {
-    this.currentStatus = { ...this.currentStatus, ...status };
-    console.log("📊 Status updated:", this.currentStatus);
-    this.broadcast(this.currentStatus);
-  }
-
-  setStatusFromJSON(jsonString: string): void {
-    try {
-      const status = JSON.parse(jsonString);
-      this.currentStatus = {
-        buzzer: status.buzzer === true || status.buzzer === "true",
-        led_green: status.led_green === true || status.led_green === "true",
-        led_blue: status.led_blue === true || status.led_blue === "true",
-        led_yello: status.led_yello === true || status.led_yello === "true",
-      };
-      console.log("📊 Status from Arduino:", this.currentStatus);
-      this.broadcast(this.currentStatus);
-    } catch (error) {
-      console.error("❌ Error parsing status JSON:", error);
-    }
-  }
-
-  getCurrentStatus(): DeviceStatus {
-    return { ...this.currentStatus };
-  }
-
-  private broadcast(status: DeviceStatus): void {
-    this.clients.forEach((client) => this.sendToClient(client, status));
-  }
-
-  private sendToClient(
-    controller: ReadableStreamDefaultController,
-    status: DeviceStatus,
-  ): void {
-    try {
-      const encoder = new TextEncoder();
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify(status)}\n\n`));
-    } catch (error) {
-      console.error("❌ Error sending to client:", error);
-      this.removeClient(controller);
-    }
+function sendToClient(
+  controller: ReadableStreamDefaultController,
+  status: DeviceStatus,
+): void {
+  try {
+    const encoder = new TextEncoder();
+    controller.enqueue(encoder.encode(`data: ${JSON.stringify(status)}\n\n`));
+  } catch (error) {
+    console.error("❌ Error sending to client:", error);
+    removeClient(controller);
   }
 }
 
-export const statusManager = new StatusManager();
+export function addClient(controller: ReadableStreamDefaultController): void {
+  clients.add(controller);
+  console.log(`✅ SSE Client connected. Total: ${clients.size}`);
+  console.log("📊 Status from Arduino:", controller);
+  sendToClient(controller, currentStatus);
+}
+
+export function removeClient(
+  controller: ReadableStreamDefaultController,
+): void {
+  clients.delete(controller);
+  console.log(`❌ SSE Client disconnected. Total: ${clients.size}`);
+}
+
+export function updateStatus(status: Partial<DeviceStatus>): void {
+  currentStatus = { ...currentStatus, ...status };
+  console.log("📊 Status updated:", currentStatus);
+  broadcast(currentStatus);
+}
+
+export function setStatusFromJSON(jsonString: string): void {
+  try {
+    const status = JSON.parse(jsonString);
+    currentStatus = {
+      buzzer: status.buzzer === true || status.buzzer === "true",
+      led_green: status.led_green === true || status.led_green === "true",
+      led_blue: status.led_blue === true || status.led_blue === "true",
+      led_yello: status.led_yello === true || status.led_yello === "true",
+    };
+    console.log("📊 Status from Arduino:", currentStatus);
+    broadcast(currentStatus);
+  } catch (error) {
+    console.error("❌ Error parsing status JSON:", error);
+  }
+}
+
+export function getCurrentStatus(): DeviceStatus {
+  return { ...currentStatus };
+}

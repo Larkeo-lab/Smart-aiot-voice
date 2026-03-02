@@ -62,6 +62,8 @@ export async function transcribeAudioService(
       mqttCommand = matchCommandByKeywords(transcription);
     }
 
+    console.log("mqttCommand", mqttCommand);
+
     // ถ้าเจอคำสั่ง ส่งผ่าน MQTT
     if (mqttCommand) {
       try {

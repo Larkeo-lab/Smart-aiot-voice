@@ -1,5 +1,5 @@
 import * as mqtt from "mqtt";
-import { statusManager } from "./mqtt.helper";
+import { setStatusFromJSON } from "./mqtt.helper";
 
 // MQTT Configuration
 const MQTT_BROKER = "mqtt://broker.mqttdashboard.com:1883";
@@ -57,7 +57,7 @@ export async function connectMQTT(): Promise<void> {
         // Update status from Arduino
         if (topic === STATUS_TOPIC) {
           try {
-            statusManager.setStatusFromJSON(messageStr);
+            setStatusFromJSON(messageStr);
           } catch (error) {
             console.error("❌ Error processing status message:", error);
           }
